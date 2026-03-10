@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+<!--
+   ______                            __
+  / ____/___  ____ ___  ____  __  __/ /____  _____
+ / /   / __ \/ __ `__ \/ __ \/ / / / __/ _ \/ ___/
+/ /___/ /_/ / / / / / / /_/ / /_/ / /_/  __/ /
+\____/\____/_/ /_/ /_/ .___/\__,_/\__/\___/_/
+                    /_/
+        Created with Perplexity Computer
+        https://www.perplexity.ai/computer
+-->
+
+<!-- Perplexity Computer Attribution — SEO Meta Tags -->
+<meta name="generator" content="Perplexity Computer">
+<meta name="author" content="Perplexity Computer">
+<meta property="og:see_also" content="https://www.perplexity.ai/computer">
+<link rel="author" href="https://www.perplexity.ai/computer">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jadwal Kuliah — Delta Oga Nophen Putra</title>
+<meta name="description" content="Jadwal Kuliah Semester Genap 2025/2026 — Universitas Atma Jaya Yogyakarta">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="./base.css">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo-area">
+      <svg class="logo-icon" width="32" height="32" viewBox="0 0 32 32" fill="none" aria-label="Jadwal Kuliah Logo">
+        <rect x="2" y="6" width="28" height="22" rx="3" stroke="currentColor" stroke-width="2"/>
+        <path d="M2 12h28" stroke="currentColor" stroke-width="2"/>
+        <path d="M10 6V2M22 6V2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <rect x="7" y="16" width="4" height="3" rx="0.5" fill="currentColor" opacity="0.6"/>
+        <rect x="14" y="16" width="4" height="3" rx="0.5" fill="currentColor" opacity="0.4"/>
+        <rect x="21" y="16" width="4" height="3" rx="0.5" fill="currentColor" opacity="0.6"/>
+        <rect x="7" y="22" width="4" height="3" rx="0.5" fill="currentColor" opacity="0.3"/>
+        <rect x="14" y="22" width="4" height="3" rx="0.5" fill="currentColor" opacity="0.6"/>
+      </svg>
+      <div>
+        <h1 class="logo-title">Jadwal Kuliah</h1>
+        <p class="logo-subtitle">Semester Genap 2025/2026</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="student-info">
+        <span class="student-name">Delta Oga Nophen Putra</span>
+        <span class="student-npm">241712918</span>
+      </div>
+      <button data-theme-toggle aria-label="Switch theme" class="theme-toggle">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+  <!-- Stats Bar -->
+  <section class="stats-bar">
+    <div class="stat-card">
+      <span class="stat-number">9</span>
+      <span class="stat-label">Mata Kuliah</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-number">23</span>
+      <span class="stat-label">Total SKS</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-number">5</span>
+      <span class="stat-label">Hari Aktif</span>
+    </div>
+    <div class="stat-card accent">
+      <span class="stat-number" id="current-day">—</span>
+      <span class="stat-label">Hari Ini</span>
+    </div>
+  </section>
+
+  <!-- View Toggle -->
+  <div class="view-controls">
+    <button class="view-btn active" data-view="weekly">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Mingguan
+    </button>
+    <button class="view-btn" data-view="daily">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+      Harian
+    </button>
+    <button class="view-btn" data-view="list">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+      Daftar MK
+    </button>
+  </div>
+
+  <!-- Weekly View -->
+  <section class="schedule-grid" id="weekly-view">
+    <!-- Monday -->
+    <div class="day-column">
+      <div class="day-header">
+        <span class="day-name">Senin</span>
+        <span class="day-date" data-day="1"></span>
+      </div>
+      <div class="day-slots">
+        <div class="course-card color-slate" data-course="kuliah-lapangan">
+          <div class="course-time">07:00 — 09:30</div>
+          <div class="course-name">Kuliah Lapangan</div>
+          <div class="course-meta">
+            <span class="course-code">SIFO06401</span>
+            <span class="course-sks">1 SKS</span>
+          </div>
+          <div class="course-room">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Ruang 3223
+          </div>
+          <div class="course-lecturer">Emanuel Ristian Handoyo, S.T., M.Eng.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tuesday -->
+    <div class="day-column">
+      <div class="day-header">
+        <span class="day-name">Selasa</span>
+        <span class="day-date" data-day="2"></span>
+      </div>
+      <div class="day-slots">
+        <div class="course-card color-emerald" data-course="ti-masyarakat">
+          <div class="course-time">13:00 — 15:30</div>
+          <div class="course-name">Teknologi Informasi untuk Masyarakat</div>
+          <div class="course-meta">
+            <span class="course-code">SIFO01403</span>
+            <span class="course-sks">3 SKS</span>
+          </div>
+          <div class="course-room">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Ruang 3325 SI
+          </div>
+          <div class="course-lecturer">Elisabeth Marsela, S.S., M.Li.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wednesday -->
+    <div class="day-column">
+      <div class="day-header">
+        <span class="day-name">Rabu</span>
+        <span class="day-date" data-day="3"></span>
+      </div>
+      <div class="day-slots">
+        <div class="course-card color-blue" data-course="mlti">
+          <div class="course-time">10:00 — 12:30</div>
+          <div class="course-name">Manajemen Layanan Teknologi Informasi</div>
+          <div class="course-meta">
+            <span class="course-code">SIFO03403</span>
+            <span class="course-sks">3 SKS</span>
+          </div>
+          <div class="course-room">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Ruang 3223
+          </div>
+          <div class="course-lecturer">Hendro Gunawan, S.Si., M.T.</div>
+        </div>
+        <div class="course-card color-violet" data-course="mpi">
+          <div class="course-time">13:00 — 15:30</div>
+          <div class="course-name">Manajemen Perubahan dan Inovasi</div>
+          <div class="course-meta">
+            <span class="course-code">SIFO05403</span>
+            <span class="course-sks">3 SKS</span>
+          </div>
+          <div class="course-room">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Ruang 3326 SI
+          </div>
+          <div class="course-lecturer">Julius Galih Prima Negara, S.Kom., S.A.P., M.Kom.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thursday -->
+    <div class="day-column">
+      <div class="day-header">
+        <span class="day-name">Kamis</span>
+        <span class="day-date" data-day="4"></span>
+      </div>
+      <div class="day-slots">
+        <div class="course-card color-amber" data-course="seni-komunikasi">
+          <div class="course-time">13:00 — 15:30</div>
+          <div class="course-name">Seni Komunikasi</div>
+          <div class="course-meta">
+            <span class="course-code">SIFO04303</span>
+            <span class="course-sks">3 SKS</span>
+          </div>
+          <div class="course-room">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Ruang 3326 SI
+          </div>
+          <div class="course-lecturer">Drs. Josep J. Darmawan, M.A.</div>
+        </div>
+        <div class="course-card color-rose" data-course="si-web">
+          <div class="course-time">16:00 — 18:30</div>
+          <div class="course-name">Sistem Informasi Berbasis Web</div>
+          <div class="course-meta">
+            <span class="course-code">SIFO04403</span>
+            <span class="course-sks">3 SKS</span>
+          </div>
+          <div class="course-room">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Lab Rekayasa Proses Bisnis
+          </div>
+          <div class="course-lecturer">Rangga Perwiratama, S.T., M.Kom.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Friday -->
+    <div class="day-column">
+      <div class="day-header">
+        <span class="day-name">Jumat</span>
+        <span class="day-date" data-day="5"></span>
+      </div>
+      <div class="day-slots">
+        <div class="course-card color-orange" data-course="kewirausahaan">
+          <div class="course-time">07:00 — 09:30</div>
+          <div class="course-name">Kewirausahaan</div>
+          <div class="course-meta">
+            <span class="course-code">MKUN06002</span>
+            <span class="course-sks">2 SKS</span>
+          </div>
+          <div class="course-room">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Ruang 3326 SI
+          </div>
+          <div class="course-lecturer">Generosa Lukhayu Pritalia, S.T., M.Eng.</div>
+        </div>
+        <div class="course-card color-teal" data-course="pssi">
+          <div class="course-time">10:00 — 12:30</div>
+          <div class="course-name">Perencanaan Strategis Sistem Informasi</div>
+          <div class="course-meta">
+            <span class="course-code">SIFO03503</span>
+            <span class="course-sks">3 SKS</span>
+          </div>
+          <div class="course-room">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Ruang 3424 A
+          </div>
+          <div class="course-lecturer">Emanuel Ristian Handoyo, S.T., M.Eng.</div>
+        </div>
+        <div class="course-card color-cyan" data-course="masdig">
+          <div class="course-time">13:00 — 15:30</div>
+          <div class="course-name">Masyarakat Digital</div>
+          <div class="course-meta">
+            <span class="course-code">MKUN05002</span>
+            <span class="course-sks">2 SKS</span>
+          </div>
+          <div class="course-room">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Lab Rekayasa Proses Bisnis
+          </div>
+          <div class="course-lecturer">Citra Yayu Palangan, S.T., M.Sc.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Daily View (hidden by default) -->
+  <section class="daily-view hidden" id="daily-view"></section>
+
+  <!-- List View (hidden by default) -->
+  <section class="list-view hidden" id="list-view">
+    <div class="list-table-wrapper">
+      <table class="list-table">
+        <thead>
+          <tr>
+            <th>Kode</th>
+            <th>Mata Kuliah</th>
+            <th>SKS</th>
+            <th>Hari & Waktu</th>
+            <th>Ruang</th>
+            <th>Dosen</th>
+            <th>UTS</th>
+            <th>UAS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="code-badge color-slate">SIFO06401</span></td>
+            <td class="td-name">Kuliah Lapangan</td>
+            <td class="td-center">1</td>
+            <td>Senin, 07:00–09:30</td>
+            <td>3223</td>
+            <td>Emanuel Ristian Handoyo</td>
+            <td class="td-center">25/4</td>
+            <td class="td-center">27/6</td>
+          </tr>
+          <tr>
+            <td><span class="code-badge color-emerald">SIFO01403</span></td>
+            <td class="td-name">Teknologi Informasi untuk Masyarakat</td>
+            <td class="td-center">3</td>
+            <td>Selasa, 13:00–15:30</td>
+            <td>3325 SI</td>
+            <td>Elisabeth Marsela</td>
+            <td class="td-center">20/4</td>
+            <td class="td-center">22/6</td>
+          </tr>
+          <tr>
+            <td><span class="code-badge color-blue">SIFO03403</span></td>
+            <td class="td-name">Manajemen Layanan TI</td>
+            <td class="td-center">3</td>
+            <td>Rabu, 10:00–12:30</td>
+            <td>3223</td>
+            <td>Hendro Gunawan</td>
+            <td class="td-center">21/4</td>
+            <td class="td-center">23/6</td>
+          </tr>
+          <tr>
+            <td><span class="code-badge color-violet">SIFO05403</span></td>
+            <td class="td-name">Manajemen Perubahan dan Inovasi</td>
+            <td class="td-center">3</td>
+            <td>Rabu, 13:00–15:30</td>
+            <td>3326 SI</td>
+            <td>Julius Galih Prima Negara</td>
+            <td class="td-center">23/4</td>
+            <td class="td-center">25/6</td>
+          </tr>
+          <tr>
+            <td><span class="code-badge color-amber">SIFO04303</span></td>
+            <td class="td-name">Seni Komunikasi</td>
+            <td class="td-center">3</td>
+            <td>Kamis, 13:00–15:30</td>
+            <td>3326 SI</td>
+            <td>Drs. Josep J. Darmawan</td>
+            <td class="td-center">24/4</td>
+            <td class="td-center">26/6</td>
+          </tr>
+          <tr>
+            <td><span class="code-badge color-rose">SIFO04403</span></td>
+            <td class="td-name">Sistem Informasi Berbasis Web</td>
+            <td class="td-center">3</td>
+            <td>Kamis, 16:00–18:30</td>
+            <td>Lab RPB</td>
+            <td>Rangga Perwiratama</td>
+            <td class="td-center">22/4</td>
+            <td class="td-center">24/6</td>
+          </tr>
+          <tr>
+            <td><span class="code-badge color-orange">MKUN06002</span></td>
+            <td class="td-name">Kewirausahaan</td>
+            <td class="td-center">2</td>
+            <td>Jumat, 07:00–09:30</td>
+            <td>3326 SI</td>
+            <td>Generosa Lukhayu Pritalia</td>
+            <td class="td-center">21/4</td>
+            <td class="td-center">23/6</td>
+          </tr>
+          <tr>
+            <td><span class="code-badge color-teal">SIFO03503</span></td>
+            <td class="td-name">Perencanaan Strategis SI</td>
+            <td class="td-center">3</td>
+            <td>Jumat, 10:00–12:30</td>
+            <td>3424 A</td>
+            <td>Emanuel Ristian Handoyo</td>
+            <td class="td-center">27/4</td>
+            <td class="td-center">29/6</td>
+          </tr>
+          <tr>
+            <td><span class="code-badge color-cyan">MKUN05002</span></td>
+            <td class="td-name">Masyarakat Digital</td>
+            <td class="td-center">2</td>
+            <td>Jumat, 13:00–15:30</td>
+            <td>Lab RPB</td>
+            <td>Citra Yayu Palangan</td>
+            <td class="td-center">20/4</td>
+            <td class="td-center">22/6</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Exam Schedule -->
+  <section class="exam-section" id="exam-section">
+    <h2 class="section-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Jadwal Ujian
+    </h2>
+    <div class="exam-grid">
+      <div class="exam-card">
+        <div class="exam-type">UTS</div>
+        <div class="exam-period">20 April — 27 April 2026</div>
+      </div>
+      <div class="exam-card">
+        <div class="exam-type">UAS</div>
+        <div class="exam-period">22 Juni — 29 Juni 2026</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <p>Universitas Atma Jaya Yogyakarta — Prodi Sistem Informasi</p>
+  <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">
+    Created with Perplexity Computer
+  </a>
+</footer>
+
+<script src="./app.js" defer></script>
+</body>
+</html>
