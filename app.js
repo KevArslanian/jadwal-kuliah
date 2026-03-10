@@ -308,14 +308,14 @@ function matchCourseToDay(courseName) {
 /* ===== AUTO-SYNC TUGAS ===== */
 var syncedTugas = [];
 var isSyncing = false;
+var showCompletedTugas = false;
 
 function getTugasStatus(t) {
-  // Returns { statusLabel, statusClass }
   var now = new Date();
   var isSubmitted = t.status === "submitted" || t.status === "graded";
 
   if (isSubmitted) {
-    return { statusLabel: "Selesai", statusClass: "tugas-status-done" };
+    return { statusLabel: "Selesai", statusClass: "tugas-status-done", isDone: true };
   }
 
   if (t.duedate && t.duedate > 0) {
@@ -324,32 +324,41 @@ function getTugasStatus(t) {
     var diffHours = diffMs / (1000 * 60 * 60);
 
     if (diffHours > 24) {
-      // More than 1 day past deadline = done, not submitted here
       return {
         statusLabel: "Selesai (tidak dikumpulkan di sini)",
         statusClass: "tugas-status-done-alt",
+        isDone: true,
       };
     }
     if (diffHours > 0) {
-      // Past deadline but within 1 day = belum selesai
       return {
         statusLabel: "Belum selesai",
         statusClass: "tugas-status-overdue",
+        isDone: false,
       };
     }
-    // Future deadline
     var daysLeft = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     if (daysLeft <= 3) {
       return {
         statusLabel: "Belum selesai (" + daysLeft + " hari lagi)",
         statusClass: "tugas-status-urgent",
+        isDone: false,
       };
     }
-    return { statusLabel: "Belum selesai", statusClass: "tugas-status-pending" };
+    return { statusLabel: "Belum selesai", statusClass: "tugas-status-pending", isDone: false };
   }
 
-  // No deadline
-  return { statusLabel: "Belum selesai", statusClass: "tugas-status-pending" };
+  return { statusLabel: "Belum selesai", statusClass: "tugas-status-pending", isDone: false };
+}
+
+function toggleCompletedTugas() {
+  showCompletedTugas = !showCompletedTugas;
+  renderTugasOnSchedule();
+  // Update toggle button text
+  var toggleBtn = document.getElementById("tugasToggleBtn");
+  if (toggleBtn) {
+    toggleBtn.textContent = showCompletedTugas ? "Sembunyikan selesai" : "Tampilkan selesai";
+  }
 }
 
 function autoSyncTugas() {
@@ -385,15 +394,26 @@ function autoSyncTugas() {
       if (data.success) {
         syncedTugas = data.tugas || [];
         renderTugasOnSchedule();
+        renderUrgentBanner();
 
         var now = new Date();
         var timeStr =
           String(now.getHours()).padStart(2, "0") +
           ":" +
           String(now.getMinutes()).padStart(2, "0");
+
+        // Count pending
+        var pendingCount = 0;
+        syncedTugas.forEach(function (t) {
+          if (!getTugasStatus(t).isDone) pendingCount++;
+        });
+        var summaryText = pendingCount > 0
+          ? pendingCount + " tugas belum selesai"
+          : "Semua tugas selesai";
+
         indicator.innerHTML =
           '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' +
-          "<span>" + syncedTugas.length + " tugas ditemukan (sync " + timeStr + ")</span>";
+          "<span>" + summaryText + " (sync " + timeStr + ")</span>";
         indicator.className = "sync-indicator sync-success";
         refreshBtn.classList.remove("hidden");
       }
@@ -406,6 +426,45 @@ function autoSyncTugas() {
       indicator.className = "sync-indicator sync-error";
       refreshBtn.classList.remove("hidden");
     });
+}
+
+function renderTugasItemHtml(t, showCourse) {
+  var s = getTugasStatus(t);
+
+  var deadlineStr = "";
+  if (t.duedate && t.duedate > 0) {
+    var d = new Date(t.duedate * 1000);
+    deadlineStr = d.getDate() + " " + MONTHS_SHORT[d.getMonth()] + " " + d.getFullYear();
+    var hours = String(d.getHours()).padStart(2, "0");
+    var mins = String(d.getMinutes()).padStart(2, "0");
+    deadlineStr += ", " + hours + ":" + mins;
+  }
+
+  var introHtml = "";
+  if (t.intro && t.intro.trim() !== "") {
+    introHtml = '<div class="tugas-detail">' + t.intro + "</div>";
+  }
+
+  var courseHtml = "";
+  if (showCourse) {
+    courseHtml = '<div class="tugas-course-label">' + t.courseName + "</div>";
+  }
+
+  return (
+    '<div class="tugas-item ' + s.statusClass + '">' +
+    '<div class="tugas-name">' + t.name + "</div>" +
+    courseHtml +
+    introHtml +
+    '<div class="tugas-meta">' +
+    '<span class="tugas-deadline">' +
+    (deadlineStr
+      ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> ' + deadlineStr
+      : "Tanpa deadline") +
+    "</span>" +
+    '<span class="tugas-badge ' + s.statusClass + '">' + s.statusLabel + "</span>" +
+    "</div>" +
+    "</div>"
+  );
 }
 
 function renderTugasOnSchedule() {
@@ -431,131 +490,286 @@ function renderTugasOnSchedule() {
 
   // Render tugas into each day column
   Object.keys(tugasByDay).forEach(function (dayKey) {
-    var container = document.querySelector(
-      '[data-tugas-day="' + dayKey + '"]'
-    );
+    var container = document.querySelector('[data-tugas-day="' + dayKey + '"]');
     if (!container) return;
 
     var tasks = tugasByDay[dayKey];
     if (tasks.length === 0) return;
 
+    // Split into pending and done
+    var pending = [];
+    var done = [];
+    tasks.forEach(function (t) {
+      if (getTugasStatus(t).isDone) {
+        done.push(t);
+      } else {
+        pending.push(t);
+      }
+    });
+
     var html = '<div class="tugas-section">';
+
+    // Header shows pending count prominently
+    var headerLabel = pending.length > 0
+      ? "Tugas Belum Selesai (" + pending.length + ")"
+      : "Semua Tugas Selesai";
     html +=
       '<div class="tugas-section-header">' +
-      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' +
-      " Tugas (" +
-      tasks.length +
-      ")" +
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> ' +
+      headerLabel +
       "</div>";
 
-    tasks.forEach(function (t) {
-      var s = getTugasStatus(t);
-
-      var deadlineStr = "";
-      if (t.duedate && t.duedate > 0) {
-        var d = new Date(t.duedate * 1000);
-        deadlineStr = d.getDate() + " " + MONTHS_SHORT[d.getMonth()] + " " + d.getFullYear();
-        var hours = String(d.getHours()).padStart(2, "0");
-        var mins = String(d.getMinutes()).padStart(2, "0");
-        deadlineStr += ", " + hours + ":" + mins;
-      }
-
-      var introHtml = "";
-      if (t.intro && t.intro.trim() !== "") {
-        introHtml =
-          '<div class="tugas-detail">' +
-          t.intro +
-          "</div>";
-      }
-
-      html +=
-        '<div class="tugas-item ' +
-        s.statusClass +
-        '">' +
-        '<div class="tugas-name">' +
-        t.name +
-        "</div>" +
-        introHtml +
-        '<div class="tugas-meta">' +
-        '<span class="tugas-deadline">' +
-        (deadlineStr
-          ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> ' +
-            deadlineStr
-          : "Tanpa deadline") +
-        "</span>" +
-        '<span class="tugas-badge ' +
-        s.statusClass +
-        '">' +
-        s.statusLabel +
-        "</span>" +
-        "</div>" +
-        "</div>";
+    // Render pending tugas (always visible)
+    pending.forEach(function (t) {
+      html += renderTugasItemHtml(t, false);
     });
+
+    // Render done tugas (hidden by default)
+    if (done.length > 0) {
+      if (showCompletedTugas) {
+        html += '<div class="tugas-done-divider">Selesai (' + done.length + ')</div>';
+        done.forEach(function (t) {
+          html += renderTugasItemHtml(t, false);
+        });
+      } else if (pending.length === 0) {
+        // All done, show them anyway
+        done.forEach(function (t) {
+          html += renderTugasItemHtml(t, false);
+        });
+      }
+    }
 
     html += "</div>";
     container.innerHTML = html;
   });
 
-  // If there are unmapped tasks, add them to a general area
+  // Unmapped tasks
   if (unmapped.length > 0) {
-    var generalContainer = document.querySelector(
-      '[data-tugas-day="1"]'
-    );
+    var generalContainer = document.querySelector('[data-tugas-day="1"]');
     if (generalContainer) {
       var existingHtml = generalContainer.innerHTML;
-      var html2 = '<div class="tugas-section tugas-general">';
-      html2 +=
-        '<div class="tugas-section-header">Tugas Lainnya (' +
-        unmapped.length +
-        ")</div>";
+
+      var pendingU = [];
+      var doneU = [];
       unmapped.forEach(function (t) {
-        var s2 = getTugasStatus(t);
-
-        var deadlineStr2 = "";
-        if (t.duedate && t.duedate > 0) {
-          var d2 = new Date(t.duedate * 1000);
-          deadlineStr2 = d2.getDate() + " " + MONTHS_SHORT[d2.getMonth()] + " " + d2.getFullYear();
-        }
-
-        var introHtml2 = "";
-        if (t.intro && t.intro.trim() !== "") {
-          introHtml2 =
-            '<div class="tugas-detail">' +
-            t.intro +
-            "</div>";
-        }
-
-        html2 +=
-          '<div class="tugas-item ' +
-          s2.statusClass +
-          '">' +
-          '<div class="tugas-name">' +
-          t.name +
-          "</div>" +
-          '<div class="tugas-course-label">' +
-          t.courseName +
-          "</div>" +
-          introHtml2 +
-          '<div class="tugas-meta">' +
-          '<span class="tugas-deadline">' +
-          (deadlineStr2 || "Tanpa deadline") +
-          "</span>" +
-          '<span class="tugas-badge ' +
-          s2.statusClass +
-          '">' +
-          s2.statusLabel +
-          "</span>" +
-          "</div>" +
-          "</div>";
+        if (getTugasStatus(t).isDone) { doneU.push(t); } else { pendingU.push(t); }
       });
-      html2 += "</div>";
-      generalContainer.innerHTML = existingHtml + html2;
+
+      var visibleU = showCompletedTugas ? unmapped : (pendingU.length > 0 ? pendingU : unmapped);
+      if (visibleU.length > 0) {
+        var html2 = '<div class="tugas-section tugas-general">';
+        html2 += '<div class="tugas-section-header">Tugas Lainnya (' + visibleU.length + ")</div>";
+        visibleU.forEach(function (t) {
+          html2 += renderTugasItemHtml(t, true);
+        });
+        html2 += "</div>";
+        generalContainer.innerHTML = existingHtml + html2;
+      }
     }
+  }
+
+  // Update the toggle button in sync bar
+  updateTugasToggleBtn();
+}
+
+function updateTugasToggleBtn() {
+  var totalDone = 0;
+  var totalPending = 0;
+  syncedTugas.forEach(function (t) {
+    if (getTugasStatus(t).isDone) { totalDone++; } else { totalPending++; }
+  });
+
+  var toggleBtn = document.getElementById("tugasToggleBtn");
+  if (!toggleBtn) {
+    // Create toggle button in sync bar
+    var syncBar = document.getElementById("syncBar");
+    if (syncBar && totalDone > 0) {
+      toggleBtn = document.createElement("button");
+      toggleBtn.id = "tugasToggleBtn";
+      toggleBtn.className = "tugas-toggle-btn";
+      toggleBtn.onclick = toggleCompletedTugas;
+      syncBar.insertBefore(toggleBtn, document.getElementById("syncRefreshBtn"));
+    }
+  }
+  if (toggleBtn) {
+    if (totalDone > 0) {
+      toggleBtn.textContent = showCompletedTugas
+        ? "Sembunyikan selesai (" + totalDone + ")"
+        : "Tampilkan selesai (" + totalDone + ")";
+      toggleBtn.classList.remove("hidden");
+    } else {
+      toggleBtn.classList.add("hidden");
+    }
+  }
+}
+
+/* ===== URGENT TUGAS BANNER ===== */
+function renderUrgentBanner() {
+  var existing = document.getElementById("urgentBanner");
+  if (existing) existing.remove();
+
+  var now = new Date();
+  var urgent = [];
+
+  syncedTugas.forEach(function (t) {
+    var s = getTugasStatus(t);
+    if (s.isDone) return;
+
+    if (t.duedate && t.duedate > 0) {
+      var deadline = new Date(t.duedate * 1000);
+      var diffMs = deadline.getTime() - now.getTime();
+      var diffHours = diffMs / (1000 * 60 * 60);
+
+      // Show if deadline within next 48 hours or already overdue within 1 day
+      if (diffHours <= 48 && diffHours > -24) {
+        urgent.push(t);
+      }
+    }
+  });
+
+  if (urgent.length === 0) return;
+
+  var banner = document.createElement("div");
+  banner.id = "urgentBanner";
+  banner.className = "urgent-banner";
+
+  var label = urgent.length === 1
+    ? "1 tugas deadline segera"
+    : urgent.length + " tugas deadline segera";
+
+  var items = "";
+  urgent.forEach(function (t) {
+    var deadline = new Date(t.duedate * 1000);
+    var diffMs = deadline.getTime() - now.getTime();
+    var diffHours = Math.round(diffMs / (1000 * 60 * 60));
+    var timeLabel;
+    if (diffHours < 0) {
+      timeLabel = "terlambat";
+    } else if (diffHours < 1) {
+      timeLabel = "< 1 jam lagi";
+    } else if (diffHours < 24) {
+      timeLabel = diffHours + " jam lagi";
+    } else {
+      timeLabel = Math.ceil(diffHours / 24) + " hari lagi";
+    }
+    items += '<span class="urgent-item">' + t.name + ' <span class="urgent-time">(' + timeLabel + ')</span></span>';
+  });
+
+  banner.innerHTML =
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+    '<div class="urgent-content">' +
+    '<strong>' + label + '</strong>' +
+    '<div class="urgent-items">' + items + '</div>' +
+    '</div>';
+
+  // Insert after sync bar
+  var syncBar = document.getElementById("syncBar");
+  if (syncBar && syncBar.parentNode) {
+    syncBar.parentNode.insertBefore(banner, syncBar.nextSibling);
   }
 }
 
 // Auto-sync on page load
 autoSyncTugas();
+
+/* ===== LIVE CLASS INDICATOR ===== */
+function highlightLiveClass() {
+  var now = new Date();
+  var jsDay = now.getDay(); // 0=Sun
+  // Only highlight on weekdays
+  if (jsDay < 1 || jsDay > 5) return;
+
+  var dayData = SCHEDULE.find(function (s) { return s.day === jsDay; });
+  if (!dayData) return;
+
+  var nowMins = now.getHours() * 60 + now.getMinutes();
+
+  // Remove old highlights
+  document.querySelectorAll(".course-card").forEach(function (card) {
+    card.classList.remove("is-live");
+    var old = card.querySelector(".live-badge");
+    if (old) old.remove();
+  });
+
+  dayData.courses.forEach(function (c) {
+    var startParts = c.timeStart.split(":");
+    var endParts = c.timeEnd.split(":");
+    var startMins = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
+    var endMins = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
+
+    if (nowMins >= startMins && nowMins < endMins) {
+      var remaining = endMins - nowMins;
+      var hrs = Math.floor(remaining / 60);
+      var mins = remaining % 60;
+      var timeLeft = hrs > 0 ? hrs + " jam " + mins + " menit" : mins + " menit";
+
+      // Find the course card
+      var cards = document.querySelectorAll(".course-card");
+      cards.forEach(function (card) {
+        var nameEl = card.querySelector(".course-name");
+        if (nameEl && nameEl.textContent.trim() === c.name) {
+          card.classList.add("is-live");
+          var badge = document.createElement("div");
+          badge.className = "live-badge";
+          badge.innerHTML = '<span class="live-dot"></span> Sedang berlangsung &middot; sisa ' + timeLeft;
+          card.insertBefore(badge, card.firstChild);
+        }
+      });
+    }
+  });
+}
+
+highlightLiveClass();
+// Refresh every minute
+setInterval(highlightLiveClass, 60000);
+
+/* ===== UTS/UAS COUNTDOWN ===== */
+function updateExamCountdown() {
+  var now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  var exams = [
+    { type: "UTS", start: new Date(2026, 3, 20) }, // April 20
+    { type: "UAS", start: new Date(2026, 5, 22) }, // June 22
+  ];
+
+  exams.forEach(function (exam) {
+    var diffMs = exam.start.getTime() - now.getTime();
+    var diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+    var cards = document.querySelectorAll(".exam-card");
+    cards.forEach(function (card) {
+      var typeEl = card.querySelector(".exam-type");
+      if (typeEl && typeEl.textContent.trim() === exam.type) {
+        // Remove old countdown
+        var old = card.querySelector(".exam-countdown");
+        if (old) old.remove();
+
+        var countdownEl = document.createElement("div");
+        countdownEl.className = "exam-countdown";
+
+        if (diffDays > 0) {
+          countdownEl.textContent = diffDays + " hari lagi";
+          if (diffDays <= 7) {
+            countdownEl.classList.add("exam-countdown-urgent");
+          } else if (diffDays <= 30) {
+            countdownEl.classList.add("exam-countdown-soon");
+          }
+        } else if (diffDays === 0) {
+          countdownEl.textContent = "Hari ini!";
+          countdownEl.classList.add("exam-countdown-urgent");
+        } else {
+          countdownEl.textContent = "Sudah lewat";
+          countdownEl.classList.add("exam-countdown-past");
+        }
+
+        card.appendChild(countdownEl);
+      }
+    });
+  });
+}
+
+updateExamCountdown();
 
 /* ===== VIEW SWITCHING ===== */
 (function () {
