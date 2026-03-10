@@ -173,8 +173,53 @@ var DAY_NAMES = [
   "Minggu",
 ];
 
-/* ===== CURRENT DAY ===== */
-(function () {
+var MONTHS_FULL = [
+  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+];
+
+var MONTHS_SHORT = [
+  "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+  "Jul", "Agu", "Sep", "Okt", "Nov", "Des",
+];
+
+var DAY_NAMES_FULL = [
+  "Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu",
+];
+
+/* ===== DATE HELPERS ===== */
+function getMondayOfCurrentWeek() {
+  var now = new Date();
+  var jsDay = now.getDay(); // 0=Sun, 1=Mon...
+  var diff = jsDay === 0 ? -6 : 1 - jsDay;
+  var monday = new Date(now);
+  monday.setDate(now.getDate() + diff);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
+
+function getDateForDay(dayIndex) {
+  // dayIndex: 1=Mon, 2=Tue, ..., 5=Fri
+  var monday = getMondayOfCurrentWeek();
+  var target = new Date(monday);
+  target.setDate(monday.getDate() + (dayIndex - 1));
+  return target;
+}
+
+function formatDateShort(date) {
+  return date.getDate() + " " + MONTHS_SHORT[date.getMonth()];
+}
+
+function formatDateFull(date) {
+  return date.getDate() + " " + MONTHS_FULL[date.getMonth()] + " " + date.getFullYear();
+}
+
+function formatDateWithDay(date) {
+  return DAY_NAMES_FULL[date.getDay()] + ", " + formatDateFull(date);
+}
+
+/* ===== DYNAMIC DATES & TODAY HIGHLIGHT ===== */
+function updateDynamicDates() {
   var now = new Date();
   var jsDay = now.getDay(); // 0=Sun, 1=Mon
   var dayMap = {
@@ -186,44 +231,53 @@ var DAY_NAMES = [
     5: "Jumat",
     6: "Sabtu",
   };
+
+  // Update "Hari Ini" stat
   var el = document.getElementById("current-day");
   if (el) el.textContent = dayMap[jsDay] || "—";
 
+  // Update date on each day header
+  document.querySelectorAll("[data-day]").forEach(function (dateEl) {
+    var dayIndex = parseInt(dateEl.getAttribute("data-day"));
+    var targetDate = getDateForDay(dayIndex);
+    dateEl.textContent = formatDateFull(targetDate);
+  });
+
   // Highlight today column
   var columns = document.querySelectorAll(".day-column");
+  columns.forEach(function (col) {
+    var header = col.querySelector(".day-header");
+    if (header) header.classList.remove("today");
+  });
   var todayIndex = jsDay - 1; // Mon=0, Tue=1...
   if (todayIndex >= 0 && todayIndex < columns.length) {
     var header = columns[todayIndex].querySelector(".day-header");
     if (header) header.classList.add("today");
   }
 
-  // Set dates on day headers
-  var monday = new Date(now);
-  var diff = jsDay === 0 ? -6 : 1 - jsDay;
-  monday.setDate(now.getDate() + diff);
+  // Update week range in header if element exists
+  var weekRangeEl = document.getElementById("week-range");
+  if (weekRangeEl) {
+    var mondayDate = getDateForDay(1);
+    var fridayDate = getDateForDay(5);
+    weekRangeEl.textContent = formatDateShort(mondayDate) + " — " + formatDateShort(fridayDate) + " " + fridayDate.getFullYear();
+  }
+}
 
-  document.querySelectorAll("[data-day]").forEach(function (dateEl) {
-    var dayOffset = parseInt(dateEl.getAttribute("data-day")) - 1;
-    var d = new Date(monday);
-    d.setDate(monday.getDate() + dayOffset);
-    dateEl.textContent =
-      d.getDate() +
-      " " +
-      [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "Mei",
-        "Jun",
-        "Jul",
-        "Agu",
-        "Sep",
-        "Okt",
-        "Nov",
-        "Des",
-      ][d.getMonth()];
-  });
+/* ===== INIT DATES ===== */
+updateDynamicDates();
+
+/* ===== AUTO-REFRESH AT MIDNIGHT ===== */
+(function scheduleMidnightRefresh() {
+  var now = new Date();
+  var midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
+  var msUntilMidnight = midnight.getTime() - now.getTime();
+
+  setTimeout(function () {
+    updateDynamicDates();
+    scheduleMidnightRefresh();
+  }, msUntilMidnight);
 })();
 
 /* ===== VIEW SWITCHING ===== */
@@ -266,14 +320,23 @@ var DAY_NAMES = [
     });
     var dayName = DAY_NAMES[jsDay] || "—";
 
+    // Get the date for this day
+    var targetDate = getDateForDay(jsDay);
+    var dateStr = formatDateFull(targetDate);
+
     var html =
       '<div class="daily-nav">' +
       '<button class="daily-nav-btn" data-daily-prev aria-label="Previous day">' +
       '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>' +
       "</button>" +
+      '<div class="daily-day-info">' +
       '<span class="daily-day-label">' +
       dayName +
       "</span>" +
+      '<span class="daily-day-date">' +
+      dateStr +
+      "</span>" +
+      "</div>" +
       '<button class="daily-nav-btn" data-daily-next aria-label="Next day">' +
       '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>' +
       "</button>" +
@@ -302,7 +365,7 @@ var DAY_NAMES = [
           '<div class="daily-course-details">' +
           '<div class="daily-detail-row">' +
           '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>' +
-          '<span>' +
+          "<span>" +
           c.code +
           " &middot; " +
           c.sks +
