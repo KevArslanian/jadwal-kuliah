@@ -84,6 +84,46 @@
     </div>
   </section>
 
+  <!-- Sync Tugas Button -->
+  <div class="sync-bar">
+    <button class="sync-btn" id="syncBtn" onclick="openSyncModal()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Sync Tugas dari Situs Kuliah
+    </button>
+    <span class="sync-status" id="syncStatus"></span>
+  </div>
+
+  <!-- Sync Modal -->
+  <div class="modal-overlay hidden" id="syncModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Login Situs Kuliah
+        </h3>
+        <button class="modal-close" onclick="closeSyncModal()" aria-label="Close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <p class="modal-desc">Masukkan credentials kuliah.uajy.ac.id untuk mengambil data tugas. Data dikirim langsung ke server UAJY dan tidak disimpan.</p>
+      <form id="syncForm" onsubmit="handleSync(event)">
+        <div class="form-group">
+          <label class="form-label" for="moodleUser">Username (NIM)</label>
+          <input class="form-input" type="text" id="moodleUser" placeholder="241712918" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="moodlePass">Password</label>
+          <input class="form-input" type="password" id="moodlePass" placeholder="Password situs kuliah" required autocomplete="current-password">
+        </div>
+        <div class="form-error hidden" id="syncError"></div>
+        <button class="form-submit" type="submit" id="syncSubmitBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Ambil Data Tugas
+        </button>
+      </form>
+    </div>
+  </div>
+
   <!-- View Toggle -->
   <div class="view-controls">
     <button class="view-btn active" data-view="weekly">
@@ -108,6 +148,7 @@
         <span class="day-name">Senin</span>
         <span class="day-date" data-day="1"></span>
       </div>
+      <div class="tugas-container" data-tugas-day="1"></div>
       <div class="day-slots">
         <div class="course-card color-slate" data-course="kuliah-lapangan">
           <div class="course-time">07:00 — 09:30</div>
@@ -131,6 +172,7 @@
         <span class="day-name">Selasa</span>
         <span class="day-date" data-day="2"></span>
       </div>
+      <div class="tugas-container" data-tugas-day="2"></div>
       <div class="day-slots">
         <div class="course-card color-emerald" data-course="ti-masyarakat">
           <div class="course-time">13:00 — 15:30</div>
@@ -154,6 +196,7 @@
         <span class="day-name">Rabu</span>
         <span class="day-date" data-day="3"></span>
       </div>
+      <div class="tugas-container" data-tugas-day="3"></div>
       <div class="day-slots">
         <div class="course-card color-blue" data-course="mlti">
           <div class="course-time">10:00 — 12:30</div>
@@ -190,6 +233,7 @@
         <span class="day-name">Kamis</span>
         <span class="day-date" data-day="4"></span>
       </div>
+      <div class="tugas-container" data-tugas-day="4"></div>
       <div class="day-slots">
         <div class="course-card color-amber" data-course="seni-komunikasi">
           <div class="course-time">13:00 — 15:30</div>
@@ -226,6 +270,7 @@
         <span class="day-name">Jumat</span>
         <span class="day-date" data-day="5"></span>
       </div>
+      <div class="tugas-container" data-tugas-day="5"></div>
       <div class="day-slots">
         <div class="course-card color-orange" data-course="kewirausahaan">
           <div class="course-time">07:00 — 09:30</div>
