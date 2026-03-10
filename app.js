@@ -305,79 +305,106 @@ function matchCourseToDay(courseName) {
   return null;
 }
 
-/* ===== SYNC TUGAS ===== */
+/* ===== AUTO-SYNC TUGAS ===== */
 var syncedTugas = [];
+var isSyncing = false;
 
-function openSyncModal() {
-  document.getElementById("syncModal").classList.remove("hidden");
-  document.getElementById("syncError").classList.add("hidden");
+function getTugasStatus(t) {
+  // Returns { statusLabel, statusClass }
+  var now = new Date();
+  var isSubmitted = t.status === "submitted" || t.status === "graded";
+
+  if (isSubmitted) {
+    return { statusLabel: "Selesai", statusClass: "tugas-status-done" };
+  }
+
+  if (t.duedate && t.duedate > 0) {
+    var deadline = new Date(t.duedate * 1000);
+    var diffMs = now.getTime() - deadline.getTime();
+    var diffHours = diffMs / (1000 * 60 * 60);
+
+    if (diffHours > 24) {
+      // More than 1 day past deadline = done, not submitted here
+      return {
+        statusLabel: "Selesai (tidak dikumpulkan di sini)",
+        statusClass: "tugas-status-done-alt",
+      };
+    }
+    if (diffHours > 0) {
+      // Past deadline but within 1 day = belum selesai
+      return {
+        statusLabel: "Belum selesai",
+        statusClass: "tugas-status-overdue",
+      };
+    }
+    // Future deadline
+    var daysLeft = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysLeft <= 3) {
+      return {
+        statusLabel: "Belum selesai (" + daysLeft + " hari lagi)",
+        statusClass: "tugas-status-urgent",
+      };
+    }
+    return { statusLabel: "Belum selesai", statusClass: "tugas-status-pending" };
+  }
+
+  // No deadline
+  return { statusLabel: "Belum selesai", statusClass: "tugas-status-pending" };
 }
 
-function closeSyncModal() {
-  document.getElementById("syncModal").classList.add("hidden");
-}
+function autoSyncTugas() {
+  if (isSyncing) return;
+  isSyncing = true;
 
-// Close modal on overlay click
-document.getElementById("syncModal").addEventListener("click", function (e) {
-  if (e.target === this) closeSyncModal();
-});
+  var indicator = document.getElementById("syncIndicator");
+  var refreshBtn = document.getElementById("syncRefreshBtn");
 
-function handleSync(e) {
-  e.preventDefault();
-  var username = document.getElementById("moodleUser").value.trim();
-  var password = document.getElementById("moodlePass").value;
-  var submitBtn = document.getElementById("syncSubmitBtn");
-  var errorEl = document.getElementById("syncError");
-  var statusEl = document.getElementById("syncStatus");
+  // Show loading state
+  indicator.innerHTML =
+    '<svg class="spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>' +
+    "<span>Mengambil data tugas dari situs kuliah...</span>";
+  indicator.className = "sync-indicator sync-loading";
+  refreshBtn.classList.add("hidden");
 
-  if (!username || !password) return;
-
-  // Show loading
-  submitBtn.disabled = true;
-  submitBtn.innerHTML =
-    '<svg class="spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Mengambil data...';
-  errorEl.classList.add("hidden");
-
-  fetch("/api/sync-tugas", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username: username, password: password }),
-  })
+  fetch("/api/sync-tugas")
     .then(function (res) {
       return res.json();
     })
     .then(function (data) {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML =
-        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Ambil Data Tugas';
+      isSyncing = false;
 
       if (data.error) {
-        errorEl.textContent = data.error;
-        errorEl.classList.remove("hidden");
+        indicator.innerHTML =
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' +
+          "<span>Gagal: " + data.error + "</span>";
+        indicator.className = "sync-indicator sync-error";
+        refreshBtn.classList.remove("hidden");
         return;
       }
 
       if (data.success) {
         syncedTugas = data.tugas || [];
         renderTugasOnSchedule();
-        closeSyncModal();
 
         var now = new Date();
         var timeStr =
           String(now.getHours()).padStart(2, "0") +
           ":" +
           String(now.getMinutes()).padStart(2, "0");
-        statusEl.textContent =
-          syncedTugas.length + " tugas ditemukan (sync " + timeStr + ")";
-        statusEl.classList.add("sync-success");
+        indicator.innerHTML =
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' +
+          "<span>" + syncedTugas.length + " tugas ditemukan (sync " + timeStr + ")</span>";
+        indicator.className = "sync-indicator sync-success";
+        refreshBtn.classList.remove("hidden");
       }
     })
     .catch(function (err) {
-      submitBtn.disabled = false;
-      submitBtn.innerHTML =
-        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Ambil Data Tugas';
-      errorEl.textContent = "Gagal terhubung ke server: " + (err.message || "");
-      errorEl.classList.remove("hidden");
+      isSyncing = false;
+      indicator.innerHTML =
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' +
+        "<span>Gagal terhubung: " + (err.message || "") + "</span>";
+      indicator.className = "sync-indicator sync-error";
+      refreshBtn.classList.remove("hidden");
     });
 }
 
@@ -422,41 +449,33 @@ function renderTugasOnSchedule() {
       "</div>";
 
     tasks.forEach(function (t) {
-      var statusClass = "tugas-status-pending";
-      if (t.status === "submitted" || t.status === "graded")
-        statusClass = "tugas-status-done";
+      var s = getTugasStatus(t);
 
       var deadlineStr = "";
       if (t.duedate && t.duedate > 0) {
         var d = new Date(t.duedate * 1000);
-        var now = new Date();
-        var diffMs = d.getTime() - now.getTime();
-        var diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        deadlineStr = d.getDate() + " " + MONTHS_SHORT[d.getMonth()] + " " + d.getFullYear();
+        var hours = String(d.getHours()).padStart(2, "0");
+        var mins = String(d.getMinutes()).padStart(2, "0");
+        deadlineStr += ", " + hours + ":" + mins;
+      }
 
-        deadlineStr = d.getDate() + " " + MONTHS_SHORT[d.getMonth()];
-
-        if (diffDays < 0) {
-          deadlineStr += " (terlambat)";
-          statusClass =
-            t.status === "submitted" || t.status === "graded"
-              ? "tugas-status-done"
-              : "tugas-status-overdue";
-        } else if (diffDays <= 3) {
-          deadlineStr += " (" + diffDays + " hari lagi)";
-          statusClass =
-            t.status === "submitted" || t.status === "graded"
-              ? "tugas-status-done"
-              : "tugas-status-urgent";
-        }
+      var introHtml = "";
+      if (t.intro && t.intro.trim() !== "") {
+        introHtml =
+          '<div class="tugas-detail">' +
+          t.intro +
+          "</div>";
       }
 
       html +=
         '<div class="tugas-item ' +
-        statusClass +
+        s.statusClass +
         '">' +
         '<div class="tugas-name">' +
         t.name +
         "</div>" +
+        introHtml +
         '<div class="tugas-meta">' +
         '<span class="tugas-deadline">' +
         (deadlineStr
@@ -465,9 +484,9 @@ function renderTugasOnSchedule() {
           : "Tanpa deadline") +
         "</span>" +
         '<span class="tugas-badge ' +
-        statusClass +
+        s.statusClass +
         '">' +
-        t.statusLabel +
+        s.statusLabel +
         "</span>" +
         "</div>" +
         "</div>";
@@ -490,19 +509,25 @@ function renderTugasOnSchedule() {
         unmapped.length +
         ")</div>";
       unmapped.forEach(function (t) {
-        var statusClass2 = "tugas-status-pending";
-        if (t.status === "submitted" || t.status === "graded")
-          statusClass2 = "tugas-status-done";
+        var s2 = getTugasStatus(t);
 
         var deadlineStr2 = "";
         if (t.duedate && t.duedate > 0) {
           var d2 = new Date(t.duedate * 1000);
-          deadlineStr2 = d2.getDate() + " " + MONTHS_SHORT[d2.getMonth()];
+          deadlineStr2 = d2.getDate() + " " + MONTHS_SHORT[d2.getMonth()] + " " + d2.getFullYear();
+        }
+
+        var introHtml2 = "";
+        if (t.intro && t.intro.trim() !== "") {
+          introHtml2 =
+            '<div class="tugas-detail">' +
+            t.intro +
+            "</div>";
         }
 
         html2 +=
           '<div class="tugas-item ' +
-          statusClass2 +
+          s2.statusClass +
           '">' +
           '<div class="tugas-name">' +
           t.name +
@@ -510,14 +535,15 @@ function renderTugasOnSchedule() {
           '<div class="tugas-course-label">' +
           t.courseName +
           "</div>" +
+          introHtml2 +
           '<div class="tugas-meta">' +
           '<span class="tugas-deadline">' +
           (deadlineStr2 || "Tanpa deadline") +
           "</span>" +
           '<span class="tugas-badge ' +
-          statusClass2 +
+          s2.statusClass +
           '">' +
-          t.statusLabel +
+          s2.statusLabel +
           "</span>" +
           "</div>" +
           "</div>";
@@ -527,6 +553,9 @@ function renderTugasOnSchedule() {
     }
   }
 }
+
+// Auto-sync on page load
+autoSyncTugas();
 
 /* ===== VIEW SWITCHING ===== */
 (function () {

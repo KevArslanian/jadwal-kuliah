@@ -84,44 +84,16 @@
     </div>
   </section>
 
-  <!-- Sync Tugas Button -->
-  <div class="sync-bar">
-    <button class="sync-btn" id="syncBtn" onclick="openSyncModal()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-      Sync Tugas dari Situs Kuliah
-    </button>
-    <span class="sync-status" id="syncStatus"></span>
-  </div>
-
-  <!-- Sync Modal -->
-  <div class="modal-overlay hidden" id="syncModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 class="modal-title">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          Login Situs Kuliah
-        </h3>
-        <button class="modal-close" onclick="closeSyncModal()" aria-label="Close">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <p class="modal-desc">Masukkan credentials kuliah.uajy.ac.id untuk mengambil data tugas. Data dikirim langsung ke server UAJY dan tidak disimpan.</p>
-      <form id="syncForm" onsubmit="handleSync(event)">
-        <div class="form-group">
-          <label class="form-label" for="moodleUser">Username (NIM)</label>
-          <input class="form-input" type="text" id="moodleUser" placeholder="241712918" required autocomplete="username">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="moodlePass">Password</label>
-          <input class="form-input" type="password" id="moodlePass" placeholder="Password situs kuliah" required autocomplete="current-password">
-        </div>
-        <div class="form-error hidden" id="syncError"></div>
-        <button class="form-submit" type="submit" id="syncSubmitBtn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-          Ambil Data Tugas
-        </button>
-      </form>
+  <!-- Sync Status Bar -->
+  <div class="sync-bar" id="syncBar">
+    <div class="sync-indicator" id="syncIndicator">
+      <svg class="spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      <span>Mengambil data tugas dari situs kuliah...</span>
     </div>
+    <button class="sync-refresh-btn hidden" id="syncRefreshBtn" onclick="autoSyncTugas()" aria-label="Refresh tugas">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Refresh
+    </button>
   </div>
 
   <!-- View Toggle -->

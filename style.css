@@ -760,36 +760,63 @@
 .sync-bar {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-3);
   margin-bottom: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-lg);
   flex-wrap: wrap;
 }
 
-.sync-btn {
+.sync-indicator {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  flex: 1;
+}
+
+.sync-indicator svg {
+  flex-shrink: 0;
+}
+
+.sync-indicator.sync-loading {
+  color: var(--color-text-muted);
+}
+
+.sync-indicator.sync-success {
+  color: #34d399;
+}
+
+.sync-indicator.sync-error {
+  color: #fb7185;
+}
+
+.sync-refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--color-primary);
   background: var(--color-primary-highlight);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
-  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-interactive);
 }
 
-.sync-btn:hover {
+.sync-refresh-btn:hover {
   background: color-mix(in srgb, var(--color-primary) 18%, transparent);
-  border-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
 }
 
-.sync-status {
-  font-size: var(--text-xs);
-  color: var(--color-text-faint);
-}
-
-.sync-status.sync-success {
-  color: #34d399;
+.sync-refresh-btn svg {
+  flex-shrink: 0;
 }
 
 /* ===== MODAL ===== */
@@ -991,6 +1018,11 @@
   border-left-color: #fb7185;
 }
 
+.tugas-item.tugas-status-done-alt {
+  border-left-color: #8b8fa3;
+  opacity: 0.65;
+}
+
 .tugas-name {
   font-size: var(--text-xs);
   font-weight: 600;
@@ -1051,6 +1083,25 @@
 .tugas-badge.tugas-status-overdue {
   color: #fb7185;
   background: rgba(251, 113, 133, 0.12);
+}
+
+.tugas-badge.tugas-status-done-alt {
+  color: #8b8fa3;
+  background: rgba(139, 143, 163, 0.12);
+}
+
+.tugas-detail {
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+  margin: 2px 0;
+  padding: 2px 0;
+  border-top: 1px solid var(--color-divider);
+  word-break: break-word;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
 }
 
 /* ===== UTILITY ===== */

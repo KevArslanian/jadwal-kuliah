@@ -1,22 +1,14 @@
 // Vercel Serverless Function: /api/sync-tugas
-// Logs in to Moodle via Web Services API and fetches assignments
+// Auto-fetches assignments from Moodle using stored credentials
 
 export default async function handler(req, res) {
-  // Only allow POST
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  var { username, password } = req.body || {};
-
-  if (!username || !password) {
-    return res.status(400).json({ error: "Username dan password harus diisi" });
-  }
-
+  // Allow both GET and POST
   var MOODLE_URL = "https://kuliah.uajy.ac.id";
+  var username = process.env.MOODLE_USER || "241712918";
+  var password = process.env.MOODLE_PASS || "Deltaoga2219.";
 
   try {
-    // Step 1: Get token via Moodle Web Services
+    // Step 1: Get token
     var tokenUrl =
       MOODLE_URL +
       "/login/token.php?username=" +
@@ -36,7 +28,7 @@ export default async function handler(req, res) {
 
     var token = tokenData.token;
 
-    // Step 2: Get user info (to get userid)
+    // Step 2: Get user info
     var userInfoRes = await fetch(
       MOODLE_URL +
         "/webservice/rest/server.php?wstoken=" +
@@ -70,7 +62,6 @@ export default async function handler(req, res) {
       return c.id;
     });
 
-    // Build courseids parameter
     var courseIdsParam = courseIds
       .map(function (id, i) {
         return "courseids[" + i + "]=" + id;
@@ -90,33 +81,34 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Gagal mengambil tugas" });
     }
 
-    // Step 5: Get submission statuses
+    // Step 5: Collect all assignments
     var allAssignments = [];
-    var assignmentIds = [];
 
     if (assignData.courses && Array.isArray(assignData.courses)) {
       assignData.courses.forEach(function (course) {
         if (course.assignments && Array.isArray(course.assignments)) {
           course.assignments.forEach(function (assign) {
-            assignmentIds.push(assign.id);
             allAssignments.push({
               id: assign.id,
               courseId: course.id,
               courseName: course.fullname || course.shortname || "",
+              courseShortName: course.shortname || "",
               name: assign.name || "",
               duedate: assign.duedate || 0,
-              intro: assign.intro
-                ? assign.intro.replace(/<[^>]*>/g, "").substring(0, 200)
+              intro: assign.intro || "",
+              introPlain: assign.intro
+                ? assign.intro.replace(/<[^>]*>/g, "").trim()
                 : "",
-              status: "unknown",
+              status: "new",
+              submissionStatus: null,
+              gradingStatus: null,
             });
           });
         }
       });
     }
 
-    // Try to get submission statuses for each assignment
-    // We'll batch these - get status for each assignment
+    // Step 6: Get submission statuses
     var statusPromises = allAssignments.map(async function (assign) {
       try {
         var statusRes = await fetch(
@@ -128,17 +120,13 @@ export default async function handler(req, res) {
         );
         var statusData = await statusRes.json();
 
-        if (
-          statusData.lastattempt &&
-          statusData.lastattempt.submission
-        ) {
-          assign.status = statusData.lastattempt.submission.status || "unknown";
-          // "submitted" = sudah dikumpulkan, "new" = belum
-          if (statusData.lastattempt.graded) {
-            assign.status = "graded";
-          }
-        } else {
-          assign.status = "new";
+        if (statusData.lastattempt && statusData.lastattempt.submission) {
+          assign.submissionStatus =
+            statusData.lastattempt.submission.status || "new";
+          assign.status = assign.submissionStatus;
+        }
+        if (statusData.lastattempt && statusData.lastattempt.gradingstatus) {
+          assign.gradingStatus = statusData.lastattempt.gradingstatus;
         }
       } catch (_e) {
         assign.status = "unknown";
@@ -148,54 +136,44 @@ export default async function handler(req, res) {
 
     await Promise.all(statusPromises);
 
-    // Step 6: Format and return results
-    // Map course names to a simplified lookup
-    var courseMap = {};
-    courses.forEach(function (c) {
-      courseMap[c.id] = {
-        fullname: c.fullname || "",
-        shortname: c.shortname || "",
-      };
-    });
+    // Step 7: Filter and format results
+    var now = Math.floor(Date.now() / 1000);
+    var thirtyDaysAgo = now - 30 * 24 * 60 * 60;
 
-    // Build the result grouped by course
     var result = allAssignments
       .filter(function (a) {
-        // Only show assignments that have a due date and are somewhat recent
-        // Show tasks with due date in the future or within last 14 days
-        var now = Math.floor(Date.now() / 1000);
-        var twoWeeksAgo = now - 14 * 24 * 60 * 60;
-        return a.duedate === 0 || a.duedate > twoWeeksAgo;
+        // Show tasks from last 30 days or future
+        return a.duedate === 0 || a.duedate > thirtyDaysAgo;
       })
       .map(function (a) {
-        var statusLabel = "Belum dikumpulkan";
-        if (a.status === "submitted") statusLabel = "Sudah dikumpulkan";
-        if (a.status === "graded") statusLabel = "Sudah dinilai";
-        if (a.status === "draft") statusLabel = "Draft";
-
         return {
           id: a.id,
           courseName: a.courseName,
+          courseShortName: a.courseShortName,
           courseId: a.courseId,
           name: a.name,
           duedate: a.duedate,
-          duedateFormatted: a.duedate
+          duedateISO: a.duedate
             ? new Date(a.duedate * 1000).toISOString()
             : null,
+          intro: a.introPlain,
           status: a.status,
-          statusLabel: statusLabel,
+          gradingStatus: a.gradingStatus,
         };
       })
       .sort(function (a, b) {
-        // Sort by due date ascending (nearest first)
         if (a.duedate === 0) return 1;
         if (b.duedate === 0) return -1;
         return a.duedate - b.duedate;
       });
 
+    // Set CORS and cache headers
+    res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
+
     return res.status(200).json({
       success: true,
       studentName: userInfo.fullname || "",
+      syncTime: new Date().toISOString(),
       totalTugas: result.length,
       tugas: result,
     });
