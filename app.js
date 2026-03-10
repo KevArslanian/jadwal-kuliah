@@ -507,6 +507,9 @@ function renderTugasOnSchedule() {
       }
     });
 
+    // If hiding completed and nothing pending, skip this day entirely
+    if (!showCompletedTugas && pending.length === 0) return;
+
     var html = '<div class="tugas-section">';
 
     // Header shows pending count prominently
@@ -524,19 +527,12 @@ function renderTugasOnSchedule() {
       html += renderTugasItemHtml(t, false);
     });
 
-    // Render done tugas (hidden by default)
-    if (done.length > 0) {
-      if (showCompletedTugas) {
-        html += '<div class="tugas-done-divider">Selesai (' + done.length + ')</div>';
-        done.forEach(function (t) {
-          html += renderTugasItemHtml(t, false);
-        });
-      } else if (pending.length === 0) {
-        // All done, show them anyway
-        done.forEach(function (t) {
-          html += renderTugasItemHtml(t, false);
-        });
-      }
+    // Render done tugas only when toggle is on
+    if (done.length > 0 && showCompletedTugas) {
+      html += '<div class="tugas-done-divider">Selesai (' + done.length + ')</div>';
+      done.forEach(function (t) {
+        html += renderTugasItemHtml(t, false);
+      });
     }
 
     html += "</div>";
@@ -555,7 +551,7 @@ function renderTugasOnSchedule() {
         if (getTugasStatus(t).isDone) { doneU.push(t); } else { pendingU.push(t); }
       });
 
-      var visibleU = showCompletedTugas ? unmapped : (pendingU.length > 0 ? pendingU : unmapped);
+      var visibleU = showCompletedTugas ? unmapped : pendingU;
       if (visibleU.length > 0) {
         var html2 = '<div class="tugas-section tugas-general">';
         html2 += '<div class="tugas-section-header">Tugas Lainnya (' + visibleU.length + ")</div>";
