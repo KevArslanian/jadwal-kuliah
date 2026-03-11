@@ -264,7 +264,7 @@ textarea.form-input{resize:vertical;min-height:60px}
       setupScreen.classList.add('hidden');
       appContent.classList.remove('hidden');
       btnDisconnect.style.display='';
-      loadNotes();
+      loadNotes().then(function(){startAutoSync();});
     }
   }
 
@@ -289,7 +289,7 @@ textarea.form-input{resize:vertical;min-height:60px}
           setupScreen.classList.add('hidden');
           appContent.classList.remove('hidden');
           btnDisconnect.style.display='';
-          loadNotes();
+          loadNotes().then(function(){startAutoSync();});
         },600);
       }else{
         setStatus('Gagal: '+(r.error||'Tidak ada respons'),'error');
@@ -304,6 +304,7 @@ textarea.form-input{resize:vertical;min-height:60px}
   // Disconnect
   btnDisconnect.addEventListener('click',function(){
     if(!confirm('Putuskan koneksi cloud?'))return;
+    stopAutoSync();
     localStorage.removeItem(API_KEY);
     apiUrl='';notesData={categories:[],notes:[]};
     appContent.classList.add('hidden');
@@ -506,6 +507,52 @@ textarea.form-input{resize:vertical;min-height:60px}
     }catch(err){showToast('Error: '+err.message,'error');}
     closeModal();
   });
+
+  // ——— Auto-sync every 30 seconds ———
+  var autoSyncTimer=null;
+  var lastSyncHash='';
+
+  function computeHash(){
+    var h='';
+    for(var i=0;i<notesData.notes.length;i++){
+      var n=notesData.notes[i];
+      h+='|'+n.id+(n.done?'d':'a')+(n.lastModified||n.createdAt||'');
+    }
+    for(var j=0;j<notesData.categories.length;j++){
+      h+='|c'+notesData.categories[j].id;
+    }
+    return h;
+  }
+
+  async function autoSyncPoll(){
+    if(!apiUrl)return;
+    try{
+      var r=await apiFetch(apiUrl+'?action=load');
+      if(r.success){
+        var newData={notes:r.notes||[],categories:r.categories||[]};
+        if(!newData.categories.length)newData.categories=[{id:'default',name:'Umum',color:'#6c8cff'}];
+        // Build hash to check if data actually changed
+        var oldH=computeHash();
+        notesData=newData;
+        var newH=computeHash();
+        if(newH!==oldH){
+          populateFilters();
+          renderNotes();
+        }
+        lastSyncHash=newH;
+      }
+    }catch(_e){}
+  }
+
+  function startAutoSync(){
+    if(autoSyncTimer)clearInterval(autoSyncTimer);
+    lastSyncHash=computeHash();
+    autoSyncTimer=setInterval(autoSyncPoll,30000);
+  }
+
+  function stopAutoSync(){
+    if(autoSyncTimer){clearInterval(autoSyncTimer);autoSyncTimer=null;}
+  }
 
   init();
 })();
