@@ -386,8 +386,8 @@ textarea.form-input{resize:vertical;min-height:60px}
       var n=list[i],cat=getCat(n.categoryId);
       var dlText='';
       if(n.deadline){
-        var dl=new Date(n.deadline+'T00:00:00');
-        dlText=dl.getDate()+' '+MONTHS[dl.getMonth()].substring(0,3)+' '+dl.getFullYear();
+        var dl=/^\d{4}-\d{2}-\d{2}$/.test(n.deadline)?new Date(n.deadline+'T00:00:00'):new Date(n.deadline);
+        if(!isNaN(dl.getTime()))dlText=dl.getDate()+' '+MONTHS[dl.getMonth()].substring(0,3)+' '+dl.getFullYear();
       }
       h+='<div class="note-card'+(n.done?' done':'')+'" data-id="'+esc(n.id)+'" style="--note-color:'+esc(cat.color)+';animation-delay:'+(i*0.03)+'s">';
       h+='<button class="note-checkbox'+(n.done?' checked':'')+'" data-action="toggle"></button>';
