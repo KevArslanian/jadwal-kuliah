@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f1117">
+<title>Notes — Jadwal Kuliah</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f1117;--surface:#161822;--surface2:#1c1f2e;
+  --border:#2a2d3d;--border2:#33374a;
+  --text:#e4e5eb;--text-muted:#8b8fa3;--text-faint:#555972;
+  --primary:#6c8cff;--primary-bg:rgba(108,140,255,0.12);--primary-hover:#8da6ff;
+  --green:#34d399;--green-bg:rgba(52,211,153,0.10);
+  --orange:#fb923c;--orange-bg:rgba(251,146,60,0.10);
+  --red:#fb7185;--red-bg:rgba(251,113,133,0.10);
+  --yellow:#fbbf24;--yellow-bg:rgba(251,191,36,0.10);
+  --radius:10px;--radius-sm:6px;
+  --font:'Inter',system-ui,-apple-system,sans-serif;--font-display:'Space Grotesk',sans-serif;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;min-height:100dvh;display:flex;flex-direction:column;-webkit-tap-highlight-color:transparent}
+
+/* Setup screen */
+.setup-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:24px;text-align:center}
+.setup-screen.hidden{display:none}
+.setup-icon{width:64px;height:64px;border-radius:16px;background:var(--primary-bg);border:1px solid rgba(108,140,255,0.25);display:grid;place-items:center;color:var(--primary);margin:0 auto 16px}
+.setup-title{font-family:var(--font-display);font-size:22px;font-weight:700;margin-bottom:4px}
+.setup-desc{font-size:13px;color:var(--text-muted);margin-bottom:24px;max-width:320px}
+.setup-input{width:100%;max-width:400px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;font-family:var(--font);outline:none;transition:border-color 0.2s}
+.setup-input:focus{border-color:var(--primary)}
+.setup-input::placeholder{color:var(--text-faint)}
+.setup-btn-primary{margin-top:12px;padding:12px 24px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;font-family:var(--font);cursor:pointer;transition:background 0.15s;width:100%;max-width:400px}
+.setup-btn-primary:hover{background:var(--primary-hover)}
+.setup-btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+.setup-status{margin-top:8px;font-size:12px;min-height:18px}
+.setup-status.error{color:var(--red)}.setup-status.success{color:var(--green)}.setup-status.loading{color:var(--yellow)}
+.setup-hint{font-size:11px;color:var(--text-faint);margin-top:16px;max-width:360px;line-height:1.5}
+
+/* App header */
+.app-header{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 8px;flex-shrink:0}
+.app-title{font-family:var(--font-display);font-size:20px;font-weight:700}
+.header-actions{display:flex;gap:8px;align-items:center}
+.icon-btn{width:36px;height:36px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text-muted);display:grid;place-items:center;cursor:pointer;transition:all 0.15s;flex-shrink:0}
+.icon-btn:hover,.icon-btn:active{color:var(--primary);background:var(--primary-bg);border-color:rgba(108,140,255,0.25)}
+.icon-btn.syncing{animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* Toolbar */
+.toolbar{padding:0 16px 8px;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+.search-wrap{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.search-wrap svg{flex-shrink:0;color:var(--text-faint)}
+.search-wrap input{flex:1;background:none;border:none;color:var(--text);font-size:14px;font-family:var(--font);outline:none}
+.search-wrap input::placeholder{color:var(--text-faint)}
+.filters{display:flex;gap:6px}
+.filter-select{flex:1;padding:8px 10px;font-size:13px;font-family:var(--font);color:var(--text-muted);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);outline:none}
+.filter-select option{background:var(--surface);color:var(--text)}
+
+/* Notes list */
+.notes-list{flex:1;overflow-y:auto;padding:0 16px 16px;display:flex;flex-direction:column;gap:8px;-webkit-overflow-scrolling:touch}
+.empty-state{text-align:center;padding:32px 16px;font-size:13px;color:var(--text-faint)}
+
+.note-card{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);border-left:3px solid var(--note-color,var(--primary));transition:all 0.15s;animation:fadeIn 0.25s ease both}
+.note-card.done{opacity:0.5}
+.note-card.done .note-name{text-decoration:line-through;color:var(--text-faint)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+.note-checkbox{width:22px;height:22px;border-radius:6px;border:2px solid var(--note-color,var(--primary));background:transparent;cursor:pointer;flex-shrink:0;margin-top:2px;display:grid;place-items:center;transition:all 0.15s;-webkit-tap-highlight-color:transparent}
+.note-checkbox:active{transform:scale(0.9)}
+.note-checkbox.checked{background:var(--note-color,var(--primary))}
+.note-checkbox.checked::after{content:'\2713';color:#0f1117;font-size:13px;font-weight:700}
+
+.note-body{flex:1;min-width:0}
+.note-name{font-size:14px;font-weight:600;color:var(--text);line-height:1.3}
+.note-desc{font-size:12px;color:var(--text-muted);margin-top:3px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.note-meta{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
+.cat-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.deadline-badge{font-size:11px;color:var(--text-faint);display:flex;align-items:center;gap:4px}
+
+.note-actions-col{display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+.del-btn{width:24px;height:24px;border:none;background:none;color:var(--text-faint);cursor:pointer;display:grid;place-items:center;border-radius:4px;font-size:16px}
+.del-btn:active{color:var(--red);background:var(--red-bg)}
+
+/* FAB */
+.fab{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:var(--primary);color:#fff;border:none;box-shadow:0 4px 16px rgba(108,140,255,0.3);display:grid;place-items:center;cursor:pointer;z-index:50;transition:all 0.15s}
+.fab:active{transform:scale(0.9);background:var(--primary-hover)}
+
+/* Modal overlay */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:100;display:flex;align-items:flex-end;justify-content:center;animation:modalBgIn 0.2s ease}
+.modal-bg.hidden{display:none}
+@keyframes modalBgIn{from{opacity:0}to{opacity:1}}
+.modal-sheet{background:var(--bg);border-radius:16px 16px 0 0;width:100%;max-width:500px;max-height:85dvh;overflow-y:auto;padding:0 0 env(safe-area-inset-bottom,16px);animation:sheetUp 0.25s ease}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:36px;height:4px;border-radius:4px;background:var(--border2);margin:10px auto 0}
+.modal-title{font-family:var(--font-display);font-size:16px;font-weight:700;padding:12px 16px 4px}
+.modal-form{padding:8px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.form-label{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:2px}
+.form-input{width:100%;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;font-family:var(--font);outline:none}
+.form-input:focus{border-color:var(--primary)}
+.form-input::placeholder{color:var(--text-faint)}
+textarea.form-input{resize:vertical;min-height:60px}
+.form-actions{display:flex;gap:8px;padding:0 16px 8px}
+.form-actions button{flex:1;padding:12px;font-size:14px;font-weight:600;font-family:var(--font);border:none;border-radius:var(--radius-sm);cursor:pointer}
+.btn-cancel{background:var(--surface);color:var(--text-muted);border:1px solid var(--border) !important}
+.btn-save{background:var(--primary);color:#fff}
+.btn-save:active{background:var(--primary-hover)}
+
+/* Sync toast */
+.sync-toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;z-index:200;pointer-events:none;animation:toastIn 0.3s ease,toastOut 0.3s ease 2.5s forwards}
+.sync-toast.success{background:var(--green-bg);border:1px solid rgba(52,211,153,0.3);color:var(--green)}
+.sync-toast.error{background:var(--red-bg);border:1px solid rgba(251,113,133,0.3);color:var(--red)}
+.sync-toast.loading{background:var(--yellow-bg);border:1px solid rgba(251,191,36,0.3);color:var(--yellow)}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes toastOut{to{opacity:0;transform:translateX(-50%) translateY(-10px)}}
+
+.app-content{display:flex;flex-direction:column;flex:1;overflow:hidden}
+.app-content.hidden{display:none}
+
+/* Disconnect btn */
+.disconnect-btn{font-size:11px;color:var(--text-faint);background:none;border:none;cursor:pointer;padding:4px 8px;text-decoration:underline}
+.disconnect-btn:active{color:var(--red)}
+</style>
+</head>
+<body>
+
+<!-- Setup screen: paste API URL -->
+<div class="setup-screen" id="setupScreen">
+  <div class="setup-icon">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+  </div>
+  <div class="setup-title">Cloud Notes</div>
+  <div class="setup-desc">Akses notes dari handphone dengan menghubungkan ke Google Apps Script cloud.</div>
+  <input type="text" id="apiUrlInput" class="setup-input" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
+  <button class="setup-btn-primary" id="btnConnect" disabled>Hubungkan</button>
+  <div class="setup-status" id="setupStatus"></div>
+  <div class="setup-hint">Paste URL Google Apps Script yang sama dengan yang kamu pasang di widget desktop. Notes akan otomatis tersinkronisasi.</div>
+</div>
+
+<!-- Main app -->
+<div class="app-content hidden" id="appContent">
+  <div class="app-header">
+    <div class="app-title">Notes</div>
+    <div class="header-actions">
+      <button class="icon-btn" id="btnSync" title="Sync">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+      </button>
+      <button class="icon-btn" id="btnDisconnect" title="Disconnect" style="display:none">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Cari note..." autocomplete="off">
+    </div>
+    <div class="filters">
+      <select class="filter-select" id="filterCat"><option value="all">Semua Kategori</option></select>
+      <select class="filter-select" id="filterStatus">
+        <option value="pending">Belum selesai</option>
+        <option value="done">Selesai</option>
+        <option value="all">Semua</option>
+      </select>
+    </div>
+  </div>
+  <div class="notes-list" id="notesList"></div>
+  <button class="fab" id="fabAdd" title="Tambah Note">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
+</div>
+
+<!-- Add/Edit Note Modal -->
+<div class="modal-bg hidden" id="noteModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalTitle">Tambah Note</div>
+    <div class="modal-form">
+      <div>
+        <div class="form-label">Nama</div>
+        <input type="text" id="inputName" class="form-input" placeholder="Nama note" autocomplete="off">
+      </div>
+      <div>
+        <div class="form-label">Keterangan</div>
+        <textarea id="inputDesc" class="form-input" placeholder="Keterangan (opsional)" rows="2"></textarea>
+      </div>
+      <div>
+        <div class="form-label">Kategori</div>
+        <select id="inputCat" class="form-input"></select>
+      </div>
+      <div>
+        <div class="form-label">Deadline (opsional)</div>
+        <input type="date" id="inputDeadline" class="form-input" style="color-scheme:dark">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-cancel" id="btnModalCancel">Batal</button>
+      <button class="btn-save" id="btnModalSave">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var MONTHS=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  var API_KEY='jadwal_notes_api_url';
+  var apiUrl='';
+  var notesData={categories:[],notes:[]};
+  var searchQ='',filterCat='all',filterStatus='pending';
+  var editingId=null;
+
+  // Elements
+  var setupScreen=document.getElementById('setupScreen');
+  var appContent=document.getElementById('appContent');
+  var apiUrlInput=document.getElementById('apiUrlInput');
+  var btnConnect=document.getElementById('btnConnect');
+  var setupStatus=document.getElementById('setupStatus');
+  var btnSync=document.getElementById('btnSync');
+  var btnDisconnect=document.getElementById('btnDisconnect');
+  var searchInput=document.getElementById('searchInput');
+  var filterCatEl=document.getElementById('filterCat');
+  var filterStatusEl=document.getElementById('filterStatus');
+  var notesList=document.getElementById('notesList');
+  var fabAdd=document.getElementById('fabAdd');
+  var noteModal=document.getElementById('noteModal');
+  var modalTitle=document.getElementById('modalTitle');
+  var inputName=document.getElementById('inputName');
+  var inputDesc=document.getElementById('inputDesc');
+  var inputCat=document.getElementById('inputCat');
+  var inputDeadline=document.getElementById('inputDeadline');
+  var btnModalCancel=document.getElementById('btnModalCancel');
+  var btnModalSave=document.getElementById('btnModalSave');
+
+  function esc(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
+
+  function showToast(msg,type){
+    var old=document.querySelector('.sync-toast');if(old)old.remove();
+    var t=document.createElement('div');t.className='sync-toast '+(type||'success');t.textContent=msg;
+    document.body.appendChild(t);setTimeout(function(){t.remove();},3000);
+  }
+
+  function setStatus(msg,type){
+    setupStatus.textContent=msg;setupStatus.className='setup-status '+(type||'');
+  }
+
+  // API fetch helper (handles Google 302 redirects)
+  async function apiFetch(url,method,body){
+    var opts={method:method||'GET',headers:{}};
+    if(body){opts.headers['Content-Type']='text/plain;charset=utf-8';opts.body=JSON.stringify(body);}
+    opts.redirect='follow';
+    var r=await fetch(url,opts);
+    return await r.json();
+  }
+
+  // Init: check saved URL
+  function init(){
+    apiUrl=localStorage.getItem(API_KEY)||'';
+    if(apiUrl){
+      setupScreen.classList.add('hidden');
+      appContent.classList.remove('hidden');
+      btnDisconnect.style.display='';
+      loadNotes();
+    }
+  }
+
+  // Enable connect button when URL typed
+  apiUrlInput.addEventListener('input',function(){
+    btnConnect.disabled=!apiUrlInput.value.trim();
+  });
+
+  // Connect
+  btnConnect.addEventListener('click',async function(){
+    var url=apiUrlInput.value.trim();
+    if(!url)return;
+    setStatus('Menghubungkan...','loading');
+    btnConnect.disabled=true;
+    try{
+      var r=await apiFetch(url+'?action=ping');
+      if(r.success){
+        apiUrl=url;
+        localStorage.setItem(API_KEY,url);
+        setStatus('Terhubung!','success');
+        setTimeout(function(){
+          setupScreen.classList.add('hidden');
+          appContent.classList.remove('hidden');
+          btnDisconnect.style.display='';
+          loadNotes();
+        },600);
+      }else{
+        setStatus('Gagal: '+(r.error||'Tidak ada respons'),'error');
+        btnConnect.disabled=false;
+      }
+    }catch(err){
+      setStatus('Error: '+err.message,'error');
+      btnConnect.disabled=false;
+    }
+  });
+
+  // Disconnect
+  btnDisconnect.addEventListener('click',function(){
+    if(!confirm('Putuskan koneksi cloud?'))return;
+    localStorage.removeItem(API_KEY);
+    apiUrl='';notesData={categories:[],notes:[]};
+    appContent.classList.add('hidden');
+    setupScreen.classList.remove('hidden');
+    apiUrlInput.value='';setStatus('','');btnConnect.disabled=true;
+    btnDisconnect.style.display='none';
+  });
+
+  // Load notes from cloud
+  async function loadNotes(){
+    btnSync.classList.add('syncing');
+    try{
+      var r=await apiFetch(apiUrl+'?action=load');
+      if(r.success){
+        notesData={notes:r.notes||[],categories:r.categories||[]};
+        if(!notesData.categories.length)notesData.categories=[{id:'default',name:'Umum',color:'#6c8cff'}];
+        populateFilters();
+        renderNotes();
+        showToast('Tersinkronisasi ('+notesData.notes.length+' notes)','success');
+      }else{
+        showToast('Gagal load: '+(r.error||'?'),'error');
+      }
+    }catch(err){
+      showToast('Error: '+err.message,'error');
+    }finally{
+      btnSync.classList.remove('syncing');
+    }
+  }
+
+  // Sync button
+  btnSync.addEventListener('click',loadNotes);
+
+  // Populate filter dropdowns
+  function populateFilters(){
+    var h='<option value="all">Semua Kategori</option>';
+    for(var i=0;i<notesData.categories.length;i++){
+      var c=notesData.categories[i];
+      h+='<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>';
+    }
+    filterCatEl.innerHTML=h;filterCatEl.value=filterCat;
+  }
+
+  function getCat(catId){
+    for(var i=0;i<notesData.categories.length;i++){
+      if(notesData.categories[i].id===catId)return notesData.categories[i];
+    }
+    return{id:'default',name:'Umum',color:'#6c8cff'};
+  }
+
+  // Render
+  function renderNotes(){
+    var q=searchQ.toLowerCase().trim();
+    var list=notesData.notes.filter(function(n){
+      if(filterStatus==='pending'&&n.done)return false;
+      if(filterStatus==='done'&&!n.done)return false;
+      if(filterCat!=='all'&&n.categoryId!==filterCat)return false;
+      if(q){
+        var cat=getCat(n.categoryId);
+        var hay=((n.name||'')+' '+(n.description||'')+' '+(cat.name||'')).toLowerCase();
+        if(hay.indexOf(q)===-1)return false;
+      }
+      return true;
+    });
+
+    list.sort(function(a,b){
+      if(a.done!==b.done)return a.done?1:-1;
+      if(a.deadline&&b.deadline)return a.deadline<b.deadline?-1:a.deadline>b.deadline?1:0;
+      if(a.deadline)return-1;if(b.deadline)return 1;
+      return(b.createdAt||'')<(a.createdAt||'')?-1:1;
+    });
+
+    if(!list.length){
+      var msg=filterStatus==='pending'?'Tidak ada note yang belum selesai':filterStatus==='done'?'Tidak ada note selesai':'Tidak ada note';
+      if(q)msg='Tidak ditemukan: "'+esc(q)+'"';
+      notesList.innerHTML='<div class="empty-state">'+msg+'</div>';return;
+    }
+
+    var h='';
+    for(var i=0;i<list.length;i++){
+      var n=list[i],cat=getCat(n.categoryId);
+      var dlText='';
+      if(n.deadline){
+        var dl=new Date(n.deadline+'T00:00:00');
+        dlText=dl.getDate()+' '+MONTHS[dl.getMonth()].substring(0,3)+' '+dl.getFullYear();
+      }
+      h+='<div class="note-card'+(n.done?' done':'')+'" data-id="'+esc(n.id)+'" style="--note-color:'+esc(cat.color)+';animation-delay:'+(i*0.03)+'s">';
+      h+='<button class="note-checkbox'+(n.done?' checked':'')+'" data-action="toggle"></button>';
+      h+='<div class="note-body"><div class="note-name">'+esc(n.name)+'</div>';
+      if(n.description)h+='<div class="note-desc">'+esc(n.description)+'</div>';
+      h+='<div class="note-meta"><span class="cat-badge" style="background:'+esc(cat.color)+'22;color:'+esc(cat.color)+'">'+esc(cat.name)+'</span>';
+      if(dlText)h+='<span class="deadline-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>'+dlText+'</span>';
+      h+='</div></div>';
+      h+='<button class="del-btn" data-action="delete">&times;</button>';
+      h+='</div>';
+    }
+    notesList.innerHTML=h;
+    attachEvents();
+  }
+
+  function attachEvents(){
+    notesList.querySelectorAll('.note-card').forEach(function(el){
+      el.querySelector('[data-action="toggle"]').addEventListener('click',function(e){
+        e.stopPropagation();toggleDone(el.dataset.id);
+      });
+      el.querySelector('[data-action="delete"]').addEventListener('click',function(e){
+        e.stopPropagation();deleteNote(el.dataset.id);
+      });
+      el.addEventListener('click',function(){openEdit(el.dataset.id);});
+    });
+  }
+
+  // Toggle done
+  async function toggleDone(noteId){
+    try{
+      var r=await apiFetch(apiUrl,'POST',{action:'toggleDone',noteId:noteId});
+      if(r.success){notesData={notes:r.notes||[],categories:r.categories||notesData.categories};renderNotes();}
+      else showToast('Gagal: '+(r.error||'?'),'error');
+    }catch(err){showToast('Error: '+err.message,'error');}
+  }
+
+  // Delete
+  async function deleteNote(noteId){
+    if(!confirm('Hapus note ini?'))return;
+    try{
+      var r=await apiFetch(apiUrl,'POST',{action:'deleteNote',noteId:noteId});
+      if(r.success){notesData={notes:r.notes||[],categories:r.categories||notesData.categories};renderNotes();showToast('Note dihapus','success');}
+      else showToast('Gagal: '+(r.error||'?'),'error');
+    }catch(err){showToast('Error: '+err.message,'error');}
+  }
+
+  // Filters
+  searchInput.addEventListener('input',function(){searchQ=searchInput.value;renderNotes();});
+  filterCatEl.addEventListener('change',function(){filterCat=filterCatEl.value;renderNotes();});
+  filterStatusEl.addEventListener('change',function(){filterStatus=filterStatusEl.value;renderNotes();});
+
+  // Add note modal
+  fabAdd.addEventListener('click',function(){
+    editingId=null;
+    modalTitle.textContent='Tambah Note';
+    inputName.value='';inputDesc.value='';inputDeadline.value='';
+    populateCatSelect();
+    noteModal.classList.remove('hidden');
+    inputName.focus();
+  });
+
+  function populateCatSelect(){
+    var h='';
+    for(var i=0;i<notesData.categories.length;i++){
+      var c=notesData.categories[i];
+      h+='<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>';
+    }
+    inputCat.innerHTML=h;
+  }
+
+  // Edit
+  function openEdit(noteId){
+    var note=null;
+    for(var i=0;i<notesData.notes.length;i++){
+      if(notesData.notes[i].id===noteId){note=notesData.notes[i];break;}
+    }
+    if(!note)return;
+    editingId=noteId;
+    modalTitle.textContent='Edit Note';
+    inputName.value=note.name||'';
+    inputDesc.value=note.description||'';
+    inputDeadline.value=note.deadline||'';
+    populateCatSelect();
+    inputCat.value=note.categoryId||'default';
+    noteModal.classList.remove('hidden');
+    inputName.focus();
+  }
+
+  // Close modal
+  function closeModal(){noteModal.classList.add('hidden');editingId=null;}
+  btnModalCancel.addEventListener('click',closeModal);
+  noteModal.addEventListener('click',function(e){if(e.target===noteModal)closeModal();});
+
+  // Save
+  btnModalSave.addEventListener('click',async function(){
+    var name=inputName.value.trim();if(!name){inputName.focus();return;}
+    var body;
+    if(editingId){
+      body={action:'updateNote',noteId:editingId,updates:{
+        name:name,description:inputDesc.value.trim(),categoryId:inputCat.value||'default',deadline:inputDeadline.value||null
+      }};
+    }else{
+      body={action:'addNote',note:{
+        name:name,description:inputDesc.value.trim(),categoryId:inputCat.value||'default',deadline:inputDeadline.value||null
+      }};
+    }
+    try{
+      var r=await apiFetch(apiUrl,'POST',body);
+      if(r.success){
+        notesData={notes:r.notes||[],categories:r.categories||notesData.categories};
+        populateFilters();renderNotes();
+        showToast(editingId?'Note diperbarui':'Note ditambahkan','success');
+      }else{
+        showToast('Gagal: '+(r.error||'?'),'error');
+      }
+    }catch(err){showToast('Error: '+err.message,'error');}
+    closeModal();
+  });
+
+  init();
+})();
+</script>
+</body>
+</html>
